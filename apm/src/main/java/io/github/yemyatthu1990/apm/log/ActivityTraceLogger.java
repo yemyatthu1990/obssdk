@@ -11,12 +11,15 @@ import io.opentelemetry.api.trace.Tracer;
 public class ActivityTraceLogger extends TraceLogger{
     static final AttributeKey<String> ACTIVITY_NAME_KEY = AttributeKey.stringKey("activityName");
     private final Activity activity;
+    private final String ACTIVITY_CREATION_SPAN_NAME_KEY = "Activity Created";
     public ActivityTraceLogger(Tracer tracer, Activity activity) {
         super(tracer);
         this.activity = activity;
     }
-
-    @Override
+    public void startActivityCreationSpan() {
+        startSpan(ACTIVITY_CREATION_SPAN_NAME_KEY);
+    }
+     @Override
     Span createSpan(String spanName) {
         final SpanBuilder spanBuilder = tracer.spanBuilder(spanName);
         spanBuilder.setSpanKind(SpanKind.CLIENT);

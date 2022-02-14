@@ -14,18 +14,19 @@ class SampleAPMApplication : Application() {
     private val applicationScope  = CoroutineScope(SupervisorJob()+Dispatchers.Main)
     override fun onCreate() {
         super.onCreate()
+        initializeAPMClient(this)
         System.out.println(System.currentTimeMillis())
-        applicationScope.launch {
-            val apmClient = withContext(Dispatchers.IO) {
-                initializeAPMClient(applicationContext)
-            }
-            var jsonString = "{\"name\":\"John\", \"age\":30, \"car\":null}"
-            var jsonObject = JSONObject(jsonString)
-            println(jsonObject.toString())
-        }
+//        applicationScope.launch {
+//            val apmClient = withContext(Dispatchers.IO) {
+//                initializeAPMClient(this@SampleAPMApplication)
+//            }
+//            var jsonString = "{\"name\":\"John\", \"age\":30, \"car\":null}"
+//            var jsonObject = JSONObject(jsonString)
+//            println(jsonObject.toString())
+//        }
     }
 
-    private fun initializeAPMClient(context: Context): Agent {
+    private fun initializeAPMClient(context: Application): Agent {
         Agent.start(context)
         return Agent.getInstance()
     }

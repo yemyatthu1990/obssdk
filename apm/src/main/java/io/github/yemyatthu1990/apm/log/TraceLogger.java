@@ -14,9 +14,8 @@ public abstract class TraceLogger {
     }
 
     public TraceLogger startSpan(String spanName) {
-        //If there is a span in progress, add event to it.
+        //If there is a span in progress, dont' do anything
         if (activeSpan.spanInProgress()) {
-            activeSpan.addEvent(spanName);
             return this;
         }
         activeSpan.startSpan(() -> createSpan(spanName));

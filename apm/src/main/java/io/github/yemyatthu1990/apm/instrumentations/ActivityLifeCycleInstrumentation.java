@@ -31,43 +31,67 @@ import io.github.yemyatthu1990.apm.log.TraceLogger;
 import io.github.yemyatthu1990.apm.monitoring.AppState;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 
-class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleCallbacks {
+public class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleCallbacks {
     private int activitiesCount = 0;
 
     //Keep track of TraceLogger instances for every activity in the app
-    private final Map<String, TraceLogger> activityTraceLoggers;
+    private final Map<String, ActivityTraceLogger> activityTraceLoggers;
 
     private final AppState appState;
     public ActivityLifeCycleInstrumentation(AppState appState) {
         this.appState = appState;
         this.activityTraceLoggers = new HashMap<>();
     }
-    private TraceLogger startSpan(Activity activity, String event) {
+    private ActivityTraceLogger getTracer(Activity activity) {
+        ActivityTraceLogger traceLogger;
         String activityName = activity.getClass().getName();
-        String spanName = activityName+"."+event;
-        TraceLogger traceLogger;
         if (activityTraceLoggers.containsKey(activityName)) {
             traceLogger = activityTraceLoggers.get(activityName);
         }
         else {
-            traceLogger = new ActivityTraceLogger(GlobalOpenTelemetry.getTracer(
+            traceLogger = new ActivityTraceLogger(GlobalOpenTelemetry.getTracerProvider().get(
                     "Fragment","0.0.1"
             ), activity);
             activityTraceLoggers.put(activityName, traceLogger);
         }
-        assert traceLogger != null;
-        return traceLogger
+        return traceLogger;
+    }
+
+    private void startActivityCreationSpan(Activity activity) {
+        getTracer(activity)
+                .startActivityCreationSpan();
+    }
+    private void startSpanIfNoneInProgress(Activity activity, String spanName) {
+        getTracer(activity)
                 .startSpan(spanName);
+    }
+    private void addEvent(Activity activity, String eventName) {
+        getTracer(activity)
+                .addEvent(eventName);
+    }
+
+    private void endSpan(Activity activity) {
+        getTracer(activity)
+                .endActiveSpan();
     }
 
     @Override
     public void onActivityPreCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-        startSpan(activity, "onActivityPreCreated");
+        startActivityCreationSpan(activity);
+        addEvent(activity, "onActivityPreCreated");
+
     }
 
     @Override
     public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-        startSpan(activity, "onActivityCreated");
+        addEvent(activity, "onActivityCreated");
+    }
+
+    @Override
+    public void onActivityPostCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+        addEvent(activity, "onActivityPostCreated");
+        endSpan(activity);
+
     }
 
     @Override
@@ -76,17 +100,29 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
             if (appState != null) appState.onAppEnterForeground();
         }
         activitiesCount++;
-        startSpan(activity, "onActivityStarted");
+
+    }
+
+    @Override
+    public void onActivityPreResumed(@NonNull Activity activity) {
+        startSpanIfNoneInProgress(activity, "Activity Resumed");
+        addEvent(activity, "onActivityPreResumed");
     }
 
     @Override
     public void onActivityResumed(@NonNull Activity activity) {
-        startSpan(activity, "onActivityResumed");
+        addEvent(activity, "onActivityResumed");
+    }
+
+    @Override
+    public void onActivityPostResumed(@NonNull Activity activity) {
+        addEvent(activity, "onActivityPostResumed");
+        endSpan(activity);
     }
 
     @Override
     public void onActivityPaused(@NonNull Activity activity) {
-        startSpan(activity, "onActivityPaused");
+
     }
 
     @Override
@@ -94,17 +130,15 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
         if (--activitiesCount==0){
             if (appState != null) appState.onAppEnterForeground();
         }
-        startSpan(activity, "onActivityStopped");
+
     }
 
     @Override
     public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
-        startSpan(activity, "onActivitySavedInstanceState");
     }
 
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
-        startSpan(activity, "onActivityDestroyed")
-                .endActiveSpan();
+
     }
 }

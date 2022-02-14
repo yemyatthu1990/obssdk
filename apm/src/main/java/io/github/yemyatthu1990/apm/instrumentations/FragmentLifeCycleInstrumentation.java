@@ -10,7 +10,6 @@ import androidx.fragment.app.FragmentManager;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import io.github.yemyatthu1990.apm.log.FragmentTraceLogger;
 import io.github.yemyatthu1990.apm.log.TraceLogger;
 import io.opentelemetry.api.GlobalOpenTelemetry;
