@@ -17,7 +17,7 @@ public class FragmentTraceLogger extends TraceLogger{
     }
 
     @Override
-    Span createSpan(String spanName) {
+    Span createSpan(String spanName, Span parent) {
         final SpanBuilder spanBuilder = tracer.spanBuilder(spanName);
         spanBuilder.setSpanKind(SpanKind.CLIENT);
         //set fragment related attributes here

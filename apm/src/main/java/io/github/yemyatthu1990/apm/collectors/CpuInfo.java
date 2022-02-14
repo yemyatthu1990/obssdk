@@ -176,12 +176,8 @@ public class CpuInfo {
 //                if (cur == min)
 //                    cpuUsage = 2; // consider lowest freq as 2% usage (usually core is offline if 0%)
 //                else
-                System.out.println("cpu current: "+ cur);
-                System.out.println("cpu min: "+ min);
-                System.out.println("cpu max: "+ max);
                 cpuUsage = (cur - min) * 100 / (max - min);
             }
-            System.out.println("cpu core usage" +cpuUsage);
             return cpuUsage;
         }
     }

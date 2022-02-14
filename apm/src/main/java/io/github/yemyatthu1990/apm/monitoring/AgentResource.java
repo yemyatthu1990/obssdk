@@ -2,9 +2,11 @@ package io.github.yemyatthu1990.apm.monitoring;
 
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
+import android.os.Build;
 
 import java.util.function.BiConsumer;
 
+import io.github.yemyatthu1990.apm.BuildConfig;
 import io.github.yemyatthu1990.apm.collectors.DeviceMetricsCollector;
 import io.github.yemyatthu1990.apm.collectors.Mapper;
 import io.opentelemetry.api.common.AttributeKey;
@@ -16,8 +18,8 @@ public class AgentResource {
     public static Resource get(Context context) {
         Resource defaultResources =  Resource.getDefault().toBuilder()
                 .put("service.name", getApplicationName(context))
-                .put("telemetry.sdk.name", "elastic-android")
-                .put("telemetry.sdk.version", "0.0.1")
+                .put("telemetry.sdk.name", BuildConfig.LIBRARY_NAME)
+                .put("telemetry.sdk.version", BuildConfig.VERSION_NAME)
                 .build();
         DeviceMetricsCollector deviceMetricsCollector = new DeviceMetricsCollector(context);
         AttributesBuilder builder = Attributes.builder();

@@ -10,6 +10,8 @@ import androidx.fragment.app.FragmentManager;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import io.github.yemyatthu1990.apm.BuildConfig;
 import io.github.yemyatthu1990.apm.log.FragmentTraceLogger;
 import io.github.yemyatthu1990.apm.log.TraceLogger;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -32,13 +34,13 @@ public class FragmentLifeCycleInstrumentation extends FragmentManager.FragmentLi
         }
         else {
              traceLogger = new FragmentTraceLogger(GlobalOpenTelemetry.getTracer(
-                    "Fragment","0.0.1"
+                    "Fragment", BuildConfig.VERSION_NAME
             ), fragment);
             fragmentTraceLoggers.put(fragmentName, traceLogger);
         }
         assert traceLogger != null;
         return traceLogger
-                .startSpan(spanName);
+                .startSpan(spanName, null);
     }
     @Override
     public void onFragmentCreated(@NonNull FragmentManager fm, @NonNull Fragment f, @Nullable Bundle savedInstanceState) {

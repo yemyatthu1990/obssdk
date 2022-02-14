@@ -13,12 +13,12 @@ public abstract class TraceLogger {
         this.activeSpan = new ActiveSpan();
     }
 
-    public TraceLogger startSpan(String spanName) {
+    public TraceLogger startSpan(String spanName, Span parent) {
         //If there is a span in progress, dont' do anything
         if (activeSpan.spanInProgress()) {
             return this;
         }
-        activeSpan.startSpan(() -> createSpan(spanName));
+        activeSpan.startSpan(() -> createSpan(spanName, parent));
         return this;
     }
 
@@ -30,6 +30,6 @@ public abstract class TraceLogger {
         activeSpan.addEvent(eventName);
     }
 
-    abstract Span createSpan(String spanName);
+    abstract Span createSpan(String spanName, Span parent);
 
 }

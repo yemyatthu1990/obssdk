@@ -22,10 +22,14 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
+import io.github.yemyatthu1990.apm.BuildConfig;
 import io.github.yemyatthu1990.apm.log.ActivityTraceLogger;
 import io.github.yemyatthu1990.apm.log.TraceLogger;
 import io.github.yemyatthu1990.apm.monitoring.AppState;
@@ -36,10 +40,12 @@ public class ActivityLifeCycleInstrumentation implements Application.ActivityLif
 
     //Keep track of TraceLogger instances for every activity in the app
     private final Map<String, ActivityTraceLogger> activityTraceLoggers;
-
+    private AppStartInstrumentation appStartInstrumentation ;
+    private AtomicReference<String> initialActivity = new AtomicReference<>();
     private final AppState appState;
-    public ActivityLifeCycleInstrumentation(AppState appState) {
+    public ActivityLifeCycleInstrumentation(AppState appState, AppStartInstrumentation appStartInstrumentation) {
         this.appState = appState;
+        this.appStartInstrumentation = appStartInstrumentation;
         this.activityTraceLoggers = new HashMap<>();
     }
     private ActivityTraceLogger getTracer(Activity activity) {
@@ -50,20 +56,27 @@ public class ActivityLifeCycleInstrumentation implements Application.ActivityLif
         }
         else {
             traceLogger = new ActivityTraceLogger(GlobalOpenTelemetry.getTracerProvider().get(
-                    "Fragment","0.0.1"
-            ), activity);
+                    "ActivityIntrumentation", BuildConfig.VERSION_NAME
+            ), activity, appStartInstrumentation);
             activityTraceLoggers.put(activityName, traceLogger);
         }
         return traceLogger;
     }
 
     private void startActivityCreationSpan(Activity activity) {
-        getTracer(activity)
-                .startActivityCreationSpan();
+        if (initialActivity.get() == null) {
+            initialActivity.set(activity.getClass().getName());
+            getTracer(activity)
+                    .startAppstartActivityCreationSpan();
+        } else {
+            getTracer(activity)
+                    .startNormalActivityCreationSpan();
+        }
     }
+
     private void startSpanIfNoneInProgress(Activity activity, String spanName) {
         getTracer(activity)
-                .startSpan(spanName);
+                .startSpan(spanName, null);
     }
     private void addEvent(Activity activity, String eventName) {
         getTracer(activity)
@@ -91,6 +104,7 @@ public class ActivityLifeCycleInstrumentation implements Application.ActivityLif
     public void onActivityPostCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
         addEvent(activity, "onActivityPostCreated");
         endSpan(activity);
+        getTracer(activity).endAppstartActivityCreationSpan();
 
     }
 
@@ -100,7 +114,10 @@ public class ActivityLifeCycleInstrumentation implements Application.ActivityLif
             if (appState != null) appState.onAppEnterForeground();
         }
         activitiesCount++;
-
+        if (activity instanceof FragmentActivity) {
+            FragmentManager fragmentManager = ((FragmentActivity) activity).getSupportFragmentManager();
+            fragmentManager.registerFragmentLifecycleCallbacks(new FragmentLifeCycleInstrumentation(), true);
+        }
     }
 
     @Override
