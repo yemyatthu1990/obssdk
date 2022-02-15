@@ -12,7 +12,9 @@ public abstract class TraceLogger {
         this.tracer = tracer;
         this.activeSpan = new ActiveSpan();
     }
-
+    public TraceLogger startSpan(String spanName) {
+        return startSpan(spanName, null);
+    }
     public TraceLogger startSpan(String spanName, Span parent) {
         //If there is a span in progress, dont' do anything
         if (activeSpan.spanInProgress()) {

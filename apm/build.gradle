@@ -74,7 +74,7 @@ dependencies {
     implementation "io.opentelemetry:opentelemetry-exporters-otlp:0.9.1"
     implementation platform("io.opentelemetry:opentelemetry-bom:1.10.1")
     implementation platform("io.opentelemetry:opentelemetry-bom-alpha:1.10.1-alpha")
-
+    implementation "androidx.startup:startup-runtime:1.1.1"
     //alpha modules
     implementation "io.opentelemetry.instrumentation:opentelemetry-okhttp-3.0:1.10.1-alpha"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"

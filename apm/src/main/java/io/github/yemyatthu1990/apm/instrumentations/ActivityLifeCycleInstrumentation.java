@@ -104,7 +104,10 @@ public class ActivityLifeCycleInstrumentation implements Application.ActivityLif
     public void onActivityPostCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
         addEvent(activity, "onActivityPostCreated");
         endSpan(activity);
-        getTracer(activity).endAppstartActivityCreationSpan();
+        if (appStartInstrumentation.getSpan()!=null) {
+            //Stop app startup
+            appStartInstrumentation.end();
+        }
 
     }
 

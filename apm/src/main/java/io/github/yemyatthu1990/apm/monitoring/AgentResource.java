@@ -15,13 +15,13 @@ import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.resources.Resource;
 
 public class AgentResource {
-    public static Resource get(Context context) {
+    public static Resource get(Context context, DeviceMetricsCollector deviceMetricsCollector) {
         Resource defaultResources =  Resource.getDefault().toBuilder()
                 .put("service.name", getApplicationName(context))
                 .put("telemetry.sdk.name", BuildConfig.LIBRARY_NAME)
                 .put("telemetry.sdk.version", BuildConfig.VERSION_NAME)
                 .build();
-        DeviceMetricsCollector deviceMetricsCollector = new DeviceMetricsCollector(context);
+
         AttributesBuilder builder = Attributes.builder();
         deviceMetricsCollector.getDeviceMetrics().forEach((key, value) -> {
             builder.put(AttributeKey.stringKey(key), value);

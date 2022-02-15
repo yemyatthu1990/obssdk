@@ -25,11 +25,9 @@ public class ActivityTraceLogger extends TraceLogger{
     }
 
     public void startAppstartActivityCreationSpan() {
-        startSpan(ACTIVITY_CREATION_SPAN_NAME_KEY, appStartInstrumentation.getStartupSpan());
-    }
-
-    public void endAppstartActivityCreationSpan() {
-        appStartInstrumentation.end();
+        if (appStartInstrumentation != null) {
+            startSpan(ACTIVITY_CREATION_SPAN_NAME_KEY, appStartInstrumentation.getSpan());
+        }
     }
 
     @Override
