@@ -1,35 +1,56 @@
 package io.github.yemyatthu1990.sampleapm
 
-import android.net.UrlQuerySanitizer
-import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import io.github.yemyatthu1990.sampleapm.R
+import android.view.View
+import androidx.appcompat.widget.AppCompatButton
+import io.github.yemyatthu1990.apm.Agent
+import io.github.yemyatthu1990.apm.AndroidLog
+import kotlinx.coroutines.*
 import okhttp3.*
-import org.json.JSONObject
 import java.io.IOException
-import java.net.URL
 
 class MainActivity : AppCompatActivity() {
+    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        findViewById<AppCompatButton>(R.id.crashButton)
+            .setOnClickListener { throw IllegalAccessException("Crash test") }
+        findViewById<AppCompatButton>(R.id.anrButton)
+            .setOnClickListener { while (true);}
         val okHttpClient = OkHttpClient()
             .newBuilder()
             .build()
-        val response =  okHttpClient.newCall(Request.Builder()
-            .url("https://gist.githubusercontent.com/rdsubhas/ed77e9547d989dabe061/raw/6d7775eaacd9beba826e0541ba391c0da3933878/gnc-js-api")
-            .build())
-            .enqueue(object: Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    e.printStackTrace()
-                }
+        okHttpClient.newCall(Request.Builder()
+             .url("https://gist.githubusercontent.com/rdsubhas/ed77e9547d989dabe061/raw/6d7775eaacd9beba826e0541ba391c0da3933878/gnc-js-api")
+             .build())
+             .enqueue(object: Callback {
+                 override fun onFailure(call: Call, e: IOException) {
+                 }
 
-                override fun onResponse(call: Call, response: Response) {
-                    println(response.body?.string())
-                }
+                 override fun onResponse(call: Call, response: Response) {
+                     AndroidLog.d("mainactivity", response.body?.string())
+                 }
 
-            })
+             })
+        scope.launch {
+            runTask()
+        }
+
+    }
+
+    override fun onStop() {
+        super.onStop()
+        scope.cancel()
+    }
+
+    private fun runTask() {
+        val trace = Agent.getInstance().startTracing("long running task", null)
+        for (i in 0..100) {
+            Thread.sleep(10)
+        }
+        trace.stopTracing();
     }
 
 }

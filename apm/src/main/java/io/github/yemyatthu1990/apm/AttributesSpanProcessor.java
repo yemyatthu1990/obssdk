@@ -1,17 +1,7 @@
 package io.github.yemyatthu1990.apm;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 
-import androidx.annotation.RequiresApi;
-
-import java.util.function.BiConsumer;
-
-import io.github.yemyatthu1990.apm.collectors.CpuInfo;
-import io.github.yemyatthu1990.apm.collectors.DeviceMetricsCollector;
-import io.github.yemyatthu1990.apm.collectors.MemoryInfo;
-import io.github.yemyatthu1990.apm.collectors.NetworkMetricCollector;
-import io.github.yemyatthu1990.apm.collectors.RuntimeAttributesCollector;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
 import io.opentelemetry.sdk.trace.ReadableSpan;

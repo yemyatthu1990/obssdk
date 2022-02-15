@@ -2,30 +2,23 @@ package io.github.yemyatthu1990.apm;
 
 import android.app.Application;
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
-import androidx.startup.AppInitializer;
+import androidx.annotation.Nullable;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
-import io.github.yemyatthu1990.apm.collectors.CpuInfo;
-import io.github.yemyatthu1990.apm.collectors.DeviceMetricsCollector;
-import io.github.yemyatthu1990.apm.collectors.MemoryInfo;
-import io.github.yemyatthu1990.apm.collectors.NetworkMetricCollector;
-import io.github.yemyatthu1990.apm.collectors.RuntimeAttributesCollector;
-import io.github.yemyatthu1990.apm.instrumentations.ActivityLifeCycleInstrumentation;
-import io.github.yemyatthu1990.apm.instrumentations.AppStartInstrumentation;
-import io.github.yemyatthu1990.apm.instrumentations.CPUSampler;
-import io.github.yemyatthu1990.apm.instrumentations.SdkInitializationInstrumentation;
-import io.github.yemyatthu1990.apm.instrumentations.StdoutMetricsExporter;
-import io.github.yemyatthu1990.apm.monitoring.AgentResource;
-import io.github.yemyatthu1990.apm.monitoring.AppState;
 import io.grpc.ManagedChannel;
 import io.grpc.android.AndroidChannelBuilder;
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -33,128 +26,172 @@ import io.opentelemetry.sdk.common.Clock;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 public class Agent {
 
     private static Agent instance;
-    private AppStartInstrumentation appStartInstrumentation;
-    private SdkInitializationInstrumentation sdkInitializationInstrumentation;
-    private static String TAG = Agent.class.getName();
+    private static final String TAG = Agent.class.getName();
+
     public static Agent getInstance() {
         return instance;
     }
+
+
     public static void start(Application application, AgentConfiguration agentConfiguration) {
         instance = new Agent(application, agentConfiguration);
     }
 
-    public static void start(Application application) {
-        instance = new Agent(application, new AgentConfiguration());
+    /**
+     *
+     * @param application application object
+     * @param endpoint endpoint for reporting traces
+     */
+    public static void start(Application application, String endpoint) {
+        AgentConfiguration configuration = new AgentConfiguration();
+        configuration.setEndpoint(endpoint);
+        instance = new Agent(application, configuration);
     }
 
-    private AgentConfiguration agentConfiguration;
-    private Application application;
+    private final AgentConfiguration agentConfiguration;
+    private final Application application;
+
+    /**
+     *
+     * @param application application object
+     * @param agentConfiguration configuration for the agent. one of endpoint or host/port must be provided
+     */
     private Agent(Application application, AgentConfiguration agentConfiguration) {
         this.agentConfiguration = agentConfiguration;
         this.application = application;
         initialize();
-
-//        new RuntimeAttributesCollector().getRuntimeAttributes().forEach((key, value) -> {
-//            System.out.println(key+" : "+ value);
-//        });
-//        for(AttributeKey key : AgentResource.get(context).getAttributes().asMap().keySet()) {
-//            System.out.println("finding attributes");
-//            System.out.println(key.getKey() + " : "+ key.getType().name());
-//            System.out.println(AgentResource.get(context).getAttribute(key));
-//        }
-//
     }
+
     private void initialize() {
         Log.d(TAG, "initializing sdk");
+
+
         long sdkInitializedTime = Clock.getDefault().now();
+
+        //Store sdk initializing events so that we can send them after the initialization is done
         List<String> listOfSdkInitializationEvents = new ArrayList<>();
+
         SdkInitializationInstrumentation.init(sdkInitializedTime);
         listOfSdkInitializationEvents.add("Initialize SDK instrumentation class");
+
+        //gRPC channel for using OLTP exporter
         ManagedChannel channel = AndroidChannelBuilder.forAddress(agentConfiguration.getCollectorHost(), agentConfiguration.getCollectorPorts())
                 .context(application).build();
         listOfSdkInitializationEvents.add("Initialize Method channel for gRPC connection");
-        DeviceMetricsCollector deviceMetricsCollector = new DeviceMetricsCollector(application);
+
+        SessionManager sessionManager = new SessionManager();
+        DeviceMetricsCollector deviceMetricsCollector = new DeviceMetricsCollector(application, sessionManager);
         listOfSdkInitializationEvents.add("Initialize Device Metrics collector");
+
         NetworkMetricCollector networkMetricCollector = new NetworkMetricCollector(application);
         listOfSdkInitializationEvents.add("Initialize Network Metrics collector");
+
         MemoryInfo.init(application);
         listOfSdkInitializationEvents.add("Initialize Memory info collection collector");
+
         RuntimeAttributesCollector runtimeAttributesCollector = new RuntimeAttributesCollector();
         listOfSdkInitializationEvents.add("Initialize Runtime attributes collector");
 
+        SdkTracerProvider tracerProvider = getTracerProvider(application, deviceMetricsCollector, networkMetricCollector, runtimeAttributesCollector,channel);
 
-        try {
-            OpenTelemetrySdk
-                    .builder()
-                    .setTracerProvider(getTracerProvider(application, deviceMetricsCollector, networkMetricCollector, runtimeAttributesCollector,channel))
-                    .setMeterProvider(getMetaProvider(application, deviceMetricsCollector,channel))
-                    .buildAndRegisterGlobal();
-        } catch (Exception ignored) {}
+        OpenTelemetrySdk
+                .builder()
+                .setTracerProvider(tracerProvider)
+                .buildAndRegisterGlobal();
 
         listOfSdkInitializationEvents.add("Initialize OpenTelemetry Sdk");
-        appStartInstrumentation = AppStartInstrumentation.getInstance();
-        appStartInstrumentation.start(GlobalOpenTelemetry.getTracer("AppStart", BuildConfig.VERSION_NAME));
+
+
+
+        if (agentConfiguration.isEnableCrashMonitoring()) {
+            CrashReporter.initializeCrashReporting(getTracer(), tracerProvider);
+            listOfSdkInitializationEvents.add("Initialize Crash Monitoring");
+        }
+
+
+
+        AppStartInstrumentation appStartInstrumentation = AppStartInstrumentation.getInstance();
+        appStartInstrumentation.start(getTracer());
         listOfSdkInitializationEvents.add("Start App Start Instrumentation");
 
-        Application.ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifeCycleInstrumentation(new AppState() {
-            @Override
-            public void onAppEnterBackground() {
-                //TODO disable metric reporting in background
-            }
+        sessionManager.setSessionIdChangeListener(new SessionTracer(getTracer()));
+        listOfSdkInitializationEvents.add("Initialize session change listener");
+        AppState appState = null;
+        if (agentConfiguration.isEnableANRReporting()) {
+            Looper mainLooper = Looper.getMainLooper();
+            Thread mainThread = Looper.getMainLooper().getThread();
+            Handler uiHandler = new Handler(mainLooper);
 
-            @Override
-            public void onAppEnterForeground() {
-                //TODO re-enable metric reporting in foreground
-            }
-        }, appStartInstrumentation);
+            appState = new ANRReporter(uiHandler, mainThread);
+        } else {
+            appState = new NoOpAppState();
+        }
+        Application.ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifeCycleInstrumentation(appState, appStartInstrumentation);
+
         application.registerActivityLifecycleCallbacks(lifecycleCallbacks);
         listOfSdkInitializationEvents.add("Register activity Lifecycle Callbacks");
-        CPUSampler.startSampling();
 
-        listOfSdkInitializationEvents.add("Start CPU Sampling");
-        sdkInitializationInstrumentation = SdkInitializationInstrumentation.getInstance(appStartInstrumentation.getSpan());
-        sdkInitializationInstrumentation.start(GlobalOpenTelemetry.getTracer("SDKStart", BuildConfig.VERSION_NAME));
+        SdkInitializationInstrumentation sdkInitializationInstrumentation = SdkInitializationInstrumentation.getInstance(appStartInstrumentation.getSpan());
+        sdkInitializationInstrumentation.start(getTracer());
+
         for (String event: listOfSdkInitializationEvents) {
             if (sdkInitializationInstrumentation.getSpan() != null) {
                 sdkInitializationInstrumentation.getSpan().addEvent(event);
             }
         }
+
         sdkInitializationInstrumentation.end();
 
     }
 
     private SdkTracerProvider getTracerProvider(Context context, DeviceMetricsCollector deviceMetricsCollector,
             NetworkMetricCollector networkMetricCollector, RuntimeAttributesCollector runtimeAttributesCollector, ManagedChannel channel) {
-        return SdkTracerProvider.builder()
-                .addSpanProcessor(getBatchSpanProcessor(context , channel))
-                .addSpanProcessor(new AttributesSpanProcessor(deviceMetricsCollector, networkMetricCollector, runtimeAttributesCollector))
-                .setResource(AgentResource.get(context, deviceMetricsCollector))
+
+        SdkTracerProviderBuilder builder =
+                SdkTracerProvider.builder()
+                        .addSpanProcessor(getBatchSpanProcessor())
+                        .addSpanProcessor(new AttributesSpanProcessor(deviceMetricsCollector, networkMetricCollector, runtimeAttributesCollector));
+
+        if (BuildConfig.DEBUG) {
+            builder.addSpanProcessor(getStdoutBatchSpanProcessor());
+        }
+        builder.setResource(AgentResource.get(context, deviceMetricsCollector));
+        return builder.build();
+    }
+
+    private BatchSpanProcessor getStdoutBatchSpanProcessor() {
+        return BatchSpanProcessor
+                .builder(new StdoutExporter())
                 .build();
     }
 
-    private SpanExporter getSpanExporter() {
+    private SpanExporter getZipkinSpanExporter() {
         ZipkinSpanExporter.baseLogger.setLevel(Level.ALL);
         return ZipkinSpanExporter
                 .builder()
-                .setEndpoint("http://10.10.10.67:9411/api/v2/spans")
+                .setEndpoint(agentConfiguration.getEndpoint())
                 .build();
     }
 
-    private BatchSpanProcessor getBatchSpanProcessor(Context context, ManagedChannel channel) {
-        return BatchSpanProcessor
-                .builder( getSpanExporter())
-                .build();
-    }
-
-//    private BatchSpanProcessor getAttributesSpanProcess(Context context< ManagedChannel) {
-//        return
+//    private SpanExporter getOltpSpanExporter(ManagedChannel channel) {
+//        return OtlpGrpcSpanExporter.newBuilder()
+//                .setChannel(channel)
+//                .build();
 //    }
+
+    private BatchSpanProcessor getBatchSpanProcessor() {
+        //Either use OltpGrpcSpanExporter or ZipkinSpanExporter depend on usage
+        return BatchSpanProcessor
+                .builder( getZipkinSpanExporter())
+                .build();
+    }
 
 
     private SdkMeterProvider getMetaProvider(Context context, DeviceMetricsCollector deviceMetricsCollector,ManagedChannel channel) {
@@ -177,5 +214,24 @@ public class Agent {
 //                    .setResource(AgentResource.get(context))
 //                    .build();
 //        }
+    }
+
+    /**
+     *
+     * @param transactionName the name for transaction
+     * @param attributes the extra attributes for transaction
+     * @return @Tracing object which can be used to end the tracing
+     */
+    public Tracing startTracing(String transactionName, @Nullable Map<String, String> attributes) {
+        SpanBuilder builder = getTracer().spanBuilder(transactionName);
+        if (attributes != null) {
+            attributes.forEach(builder::setAttribute);
+        }
+        Span span = builder.startSpan();
+        return Tracing.fromSpan(span);
+    }
+
+    static Tracer getTracer() {
+        return GlobalOpenTelemetry.getTracer(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
     }
 }

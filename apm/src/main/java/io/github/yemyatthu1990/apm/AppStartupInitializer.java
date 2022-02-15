@@ -1,16 +1,13 @@
 package io.github.yemyatthu1990.apm;
 
 import android.content.Context;
-import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
 import androidx.startup.Initializer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import io.github.yemyatthu1990.apm.instrumentations.AppStartInstrumentation;
 import io.opentelemetry.sdk.common.Clock;
 
 public class AppStartupInitializer implements Initializer<AppStartInstrumentation> {

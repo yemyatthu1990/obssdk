@@ -1,14 +1,8 @@
 package io.github.yemyatthu1990.sampleapm
 
 import android.app.Application
-import android.content.Context
-import android.util.Log
 import io.github.yemyatthu1990.apm.Agent
-import io.github.yemyatthu1990.apm.AgentConfiguration
-import io.github.yemyatthu1990.apm.MonitoringOptions
-import io.github.yemyatthu1990.apm.UploadListener
 import kotlinx.coroutines.*
-import org.json.JSONObject
 
 class SampleAPMApplication : Application() {
     private val applicationScope  = CoroutineScope(SupervisorJob()+Dispatchers.Main)
@@ -27,7 +21,7 @@ class SampleAPMApplication : Application() {
     }
 
     private fun initializeAPMClient(context: Application): Agent {
-        Agent.start(context)
+        Agent.start(context, "http://10.228.213.101:9411/api/v2/spans")
         return Agent.getInstance()
     }
 }
