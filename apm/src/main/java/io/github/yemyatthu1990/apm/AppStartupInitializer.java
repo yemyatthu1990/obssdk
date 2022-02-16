@@ -1,10 +1,8 @@
 package io.github.yemyatthu1990.apm;
 
 import android.content.Context;
-
 import androidx.annotation.NonNull;
 import androidx.startup.Initializer;
-
 import java.util.ArrayList;
 import java.util.List;
 

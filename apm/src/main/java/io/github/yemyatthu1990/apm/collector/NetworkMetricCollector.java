@@ -72,21 +72,6 @@ public class NetworkMetricCollector extends MetricsCollector {
         return proxyAddress;
     }
 
-    public ConcurrentMap<String, String> getNetworkMetrics() {
-        // client app related info
-        try {
-            this.getCarrierName(context);
-            this.getIMSI(context);
-            this.put(wifiIPKey, getWifiIp(context));
-            this.put(wifiSSIDKey, getWifiSSID(context));
-            this.put(wifiBssidKey, getWifiBSSID(context));
-            this.put(mobileDbmKey, getSignalStrength(context));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return map();
-    }
-
     @SuppressLint("MissingPermission")
     private String getSignalStrength(Context context) {
         try {
@@ -345,6 +330,21 @@ public class NetworkMetricCollector extends MetricsCollector {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    @Override
+    public ConcurrentMap<String, String> getMetric() {
+        try {
+            this.getCarrierName(context);
+            this.getIMSI(context);
+            this.put(wifiIPKey, getWifiIp(context));
+            this.put(wifiSSIDKey, getWifiSSID(context));
+            this.put(wifiBssidKey, getWifiBSSID(context));
+            this.put(mobileDbmKey, getSignalStrength(context));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return map();
     }
 }
 

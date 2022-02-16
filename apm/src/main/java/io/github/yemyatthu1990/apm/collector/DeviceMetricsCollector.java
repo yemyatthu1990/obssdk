@@ -14,6 +14,7 @@ import android.util.Log;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 
 import io.github.yemyatthu1990.apm.SessionManager;
 
@@ -31,18 +32,6 @@ public class DeviceMetricsCollector extends MetricsCollector {
         this.context = context;
         this.sessionManager =sessionManger;
     }
-
-    public Map<String, String> getDeviceMetrics() {
-        this.put(deviceIDKey, getDeviceId(context));
-        this.put(deviceModelKey, Build.MODEL);
-        this.put(deviceTypeKey, getDeviceType(context));
-        this.put(deviceBrandKey, Build.BRAND);
-        this.put(deviceABIKey, TextUtils.join(",", Build.SUPPORTED_ABIS));
-        this.put(deviceManufactureKey, Build.MANUFACTURER);
-        this.put(sessionIdKey , sessionManager.getSessionId());
-        return this.map();
-    }
-
     @SuppressLint("HardwareIds")
     private String getDeviceId(Context context) {
         try {
@@ -93,5 +82,17 @@ public class DeviceMetricsCollector extends MetricsCollector {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    public ConcurrentMap<String, String> getMetric() {
+        this.put(deviceIDKey, getDeviceId(context));
+        this.put(deviceModelKey, Build.MODEL);
+        this.put(deviceTypeKey, getDeviceType(context));
+        this.put(deviceBrandKey, Build.BRAND);
+        this.put(deviceABIKey, TextUtils.join(",", Build.SUPPORTED_ABIS));
+        this.put(deviceManufactureKey, Build.MANUFACTURER);
+        this.put(sessionIdKey , sessionManager.getSessionId());
+        return this.map();
     }
 }

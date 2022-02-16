@@ -4,12 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 
-class MetricsCollector implements Mapper {
+public abstract class MetricsCollector implements Mapper {
     private final ConcurrentMap<String, String> cache;
 
     public MetricsCollector() {
@@ -79,4 +80,6 @@ class MetricsCollector implements Mapper {
     public void clear() {
         cache.clear();
     }
+
+    public abstract ConcurrentMap<String, String> getMetric();
 }
