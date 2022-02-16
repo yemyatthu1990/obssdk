@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.collector;
 
 import static android.content.Context.UI_MODE_SERVICE;
 
@@ -14,6 +14,8 @@ import android.util.Log;
 
 import java.util.Map;
 import java.util.UUID;
+
+import io.github.yemyatthu1990.apm.SessionManager;
 
 public class DeviceMetricsCollector extends MetricsCollector {
     private final String deviceIDKey = "device.id";

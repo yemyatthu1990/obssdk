@@ -1,15 +1,14 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.reporter;
 
-import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.os.Build;
 
 import androidx.annotation.NonNull;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.github.yemyatthu1990.apm.AppState;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 

@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.collector;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -10,24 +10,24 @@ public class MemoryInfo {
         MemoryInfo.activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     }
 
-    public static long getTotalRam() {
+    public static double getTotalRam() {
         if (activityManager == null){
             throw new IllegalStateException("MemoryInfo must be initialized by calling MemoryInfo.init(Context context) before accessing Total Ram method");
         }
         ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memInfo);
-        return memInfo.totalMem/ 1000000;
+        return memInfo.totalMem/ (double)1000000000;
     }
     public static double getUsageRam() {
         return 100 - ((getFreeRam() / (double)getTotalRam()) * 100.0);
     }
-    public static long getFreeRam() {
+    public static double getFreeRam() {
         if (activityManager == null){
             throw new IllegalStateException("MemoryInfo must be initialized by calling MemoryInfo.init(Context context) before accessing Free Ram method");
         }
         ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memInfo);
-        return memInfo.availMem / 1000000;
+        return memInfo.availMem / (double)1000000000;
     }
 
 //    private String getTotalRAMOldAndroid() {

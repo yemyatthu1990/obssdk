@@ -1,7 +1,8 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.instrumentation;
 
 import androidx.fragment.app.Fragment;
 
+import io.github.yemyatthu1990.apm.instrumentation.TraceLogger;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;

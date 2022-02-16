@@ -8,6 +8,7 @@ import androidx.startup.Initializer;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.yemyatthu1990.apm.instrumentation.AppStartInstrumentation;
 import io.opentelemetry.sdk.common.Clock;
 
 public class AppStartupInitializer implements Initializer<AppStartInstrumentation> {

@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.collector;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
 
 class MetricsCollector implements Mapper {
     private final ConcurrentMap<String, String> cache;
@@ -56,13 +57,21 @@ class MetricsCollector implements Mapper {
 
     @Override
     public void put(@NonNull String key, @NonNull String value) {
-        cache.put(key, value);
+        if (!value.isEmpty()) {
+            cache.put(key, value);
+        }
     }
 
     @Override
     public void putAll(@Nullable ConcurrentMap<String, String> map) {
         if (map != null) {
-            cache.putAll(map);
+            for (String key: map.keySet()) {
+                String value = map.get(key);
+                if (value != null && !value.isEmpty()) {
+                    cache.put(key, value);
+                }
+            }
+
         }
     }
 

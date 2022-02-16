@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.instrumentation;
 
 import androidx.annotation.Nullable;
 

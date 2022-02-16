@@ -1,9 +1,10 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.instrumentation;
 
 import androidx.annotation.Nullable;
 
 import java.util.concurrent.TimeUnit;
 
+import io.github.yemyatthu1990.apm.InteractionInstrumentor;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.common.Clock;
@@ -11,7 +12,7 @@ import io.opentelemetry.sdk.common.Clock;
 /**
  * Class to instrument the app startup span
  */
-class AppStartInstrumentation implements InteractionInstrumentor {
+public class AppStartInstrumentation implements InteractionInstrumentor {
     private static long appStartTime;
     private static AppStartInstrumentation instance;
     private AppStartInstrumentation() {

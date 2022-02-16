@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.collector;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -23,6 +23,7 @@ import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
 import androidx.annotation.RequiresPermission;
+import androidx.core.content.ContextCompat;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -31,6 +32,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentMap;
 
 
@@ -108,7 +110,7 @@ public class NetworkMetricCollector extends MetricsCollector {
     @RequiresPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     private String getSignalStrengthPreQ(Context context) throws SecurityException {
         TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        if (context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             try {
                 List<CellInfo> cellInfos = telephonyManager.getAllCellInfo();   //This will give info of all sims present inside your mobile
                 if (cellInfos != null) {
@@ -138,11 +140,9 @@ public class NetworkMetricCollector extends MetricsCollector {
                 }
                 return "";
             } catch (Exception ignored) {
-                return "error";
             }
-        } else {
-            return "disabled";
         }
+        return "";
     }
 
     @SuppressLint({"MissingPermission", "HardwareIds"})
@@ -150,8 +150,8 @@ public class NetworkMetricCollector extends MetricsCollector {
 
         try {
             TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            String networkType = "disabled";
-            if (context.checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            String networkType = "";
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
                 int nType = manager.getNetworkType();
                 switch (nType) {
                     case TelephonyManager.NETWORK_TYPE_1xRTT:
@@ -222,11 +222,11 @@ public class NetworkMetricCollector extends MetricsCollector {
             }
             this.put(carrierCountryCodeKey, mcc);
             this.put(carrierNetworkCodeKey, mnc);
-            this.put(simStateKey, this.getPrivateData("gsm.sim.state"));
+            this.put(simStateKey.toLowerCase(Locale.ROOT), this.getPrivateData("gsm.sim.state"));
             this.put(simIsRoamingKey, this.getPrivateData("gsm.operator.isroaming"));
 
 
-            if ((context.checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED)
+            if ((ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED)
                     && Build.VERSION.SDK_INT < 29) {
                 if (Build.VERSION.SDK_INT < 26) {
                     this.put(telephonyDeviceIdKey, manager.getDeviceId());
@@ -270,7 +270,7 @@ public class NetworkMetricCollector extends MetricsCollector {
 
         TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
         try {
-            if (context.checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(context,Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
                     && Build.VERSION.SDK_INT < 29) {
                 if (manager.getSubscriberId() != null) {
                     this.put(telephonyIMSIKey, manager.getSubscriberId());
@@ -287,7 +287,7 @@ public class NetworkMetricCollector extends MetricsCollector {
         try {
             WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-            if (context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED && wifiManager.getConnectionInfo() != null) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED && wifiManager.getConnectionInfo() != null) {
 
                 int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
 
@@ -316,32 +316,25 @@ public class NetworkMetricCollector extends MetricsCollector {
     private String getWifiSSID(Context context) {
         try {
             WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            if (context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
                 WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                 String ssid = ((wifiInfo.getSSID() == null || wifiInfo.getSSID().isEmpty()) || "<unknown ssid>".equals(wifiInfo.getSSID())) ? "" : wifiInfo.getSSID();
                 ssid = ssid.replaceAll("\"", "");
                 return ssid;
-            } else {
-                return "disabled";
             }
-        } catch (Exception e) {
-            return "error";
-        }
+        } catch (Exception ignored) {}
+        return "";
     }
 
     private String getWifiBSSID(Context context) {
         try {
             WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            if (context.checkCallingOrSelfPermission(Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_WIFI_STATE) == PackageManager.PERMISSION_GRANTED) {
                 WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                 return ((wifiInfo.getBSSID() == null || wifiInfo.getBSSID().isEmpty()) || "00:00:00:00:00:00".equals(wifiInfo.getBSSID())) ? "" : wifiInfo.getBSSID();
-            } else {
-
-                return "disabled";
             }
-        } catch (Exception e) {
-            return "error";
-        }
+        } catch (Exception ignored) {}
+        return "";
     }
 
     private String getPrivateData(String key) {

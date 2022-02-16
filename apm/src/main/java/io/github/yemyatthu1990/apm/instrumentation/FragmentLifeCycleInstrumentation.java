@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.instrumentation;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.github.yemyatthu1990.apm.BuildConfig;
-import io.github.yemyatthu1990.apm.FragmentTraceLogger;
-import io.github.yemyatthu1990.apm.TraceLogger;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 
 public class FragmentLifeCycleInstrumentation extends FragmentManager.FragmentLifecycleCallbacks {

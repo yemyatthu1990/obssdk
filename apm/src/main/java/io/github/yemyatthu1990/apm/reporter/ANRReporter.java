@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.reporter;
 
 import android.os.Handler;
 
@@ -8,20 +8,23 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
+import io.github.yemyatthu1990.apm.Agent;
+import io.github.yemyatthu1990.apm.AgentConstant;
+import io.github.yemyatthu1990.apm.AppState;
+import io.github.yemyatthu1990.apm.Utils;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
-class ANRReporter implements Runnable, AppState {
+public class ANRReporter implements Runnable, AppState {
     private final AtomicInteger anrCounter = new AtomicInteger();
     private final Handler uiHandler;
     private final Thread mainThread;
     private final ScheduledExecutorService anrScheduler;
     private ScheduledFuture<?> scheduledFuture;
 
-    ANRReporter(Handler uiHandler, Thread mainThread) {
+    public ANRReporter(Handler uiHandler, Thread mainThread) {
         this.uiHandler = uiHandler;
         this.mainThread = mainThread;
         anrScheduler = Executors.newScheduledThreadPool(1);
@@ -53,7 +56,7 @@ class ANRReporter implements Runnable, AppState {
                     .setSpanKind(SpanKind.CLIENT)
                     .setAttribute(SemanticAttributes.EXCEPTION_STACKTRACE,
                             Utils.formatStackTrace(stackTrace))
-                    .setAttribute(AgentConstant.COMPONENT_TYPE , AgentConstant.COMPONENT.ERROR.name())
+                    .setAttribute(AgentConstant.COMPONENT_TYPE , AgentConstant.component.error.name())
 
                     .startSpan()
                     .setStatus(StatusCode.ERROR)

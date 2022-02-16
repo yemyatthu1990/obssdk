@@ -14,8 +14,23 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import io.github.yemyatthu1990.apm.collector.DeviceMetricsCollector;
+import io.github.yemyatthu1990.apm.collector.MemoryInfo;
+import io.github.yemyatthu1990.apm.collector.NetworkMetricCollector;
+import io.github.yemyatthu1990.apm.collector.RuntimeAttributesCollector;
+import io.github.yemyatthu1990.apm.exporter.StdoutExporter;
+import io.github.yemyatthu1990.apm.exporter.StdoutMetricsExporter;
+import io.github.yemyatthu1990.apm.instrumentation.ActivityLifeCycleInstrumentation;
+import io.github.yemyatthu1990.apm.instrumentation.AppStartInstrumentation;
+import io.github.yemyatthu1990.apm.instrumentation.SdkInitializationInstrumentation;
+import io.github.yemyatthu1990.apm.reporter.ANRReporter;
+import io.github.yemyatthu1990.apm.reporter.CrashReporter;
+import io.github.yemyatthu1990.apm.reporter.DeprecatedAPINetworkChangeReporter;
+import io.github.yemyatthu1990.apm.reporter.NetworkChangeReporter;
+import io.grpc.Internal;
 import io.grpc.ManagedChannel;
 import io.grpc.android.AndroidChannelBuilder;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -25,6 +40,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.common.Clock;
+import io.opentelemetry.sdk.logs.SdkLogEmitterProviderBuilder;
 import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -36,12 +52,16 @@ public class Agent {
 
     private static Agent instance;
     private static final String TAG = Agent.class.getName();
-
+    public static AtomicBoolean isSDKInitializingDone = new AtomicBoolean(false);
     public static Agent getInstance() {
         return instance;
     }
 
-
+    /**
+     *
+     * @param application application object
+     * @param agentConfiguration configuration settings for Agent. Endpoint or Host is mandatory
+     */
     public static void start(Application application, AgentConfiguration agentConfiguration) {
         instance = new Agent(application, agentConfiguration);
     }
@@ -123,9 +143,12 @@ public class Agent {
         appStartInstrumentation.start(getTracer());
         listOfSdkInitializationEvents.add("Start App Start Instrumentation");
 
-        sessionManager.setSessionIdChangeListener(new SessionTracer(getTracer()));
-        listOfSdkInitializationEvents.add("Initialize session change listener");
         List<AppState> appStates = new ArrayList<>();
+        SessionTracer sessionTracer = new SessionTracer(getTracer());
+        sessionManager.setSessionIdChangeListener(sessionTracer);
+        appStates.add(sessionTracer);
+        listOfSdkInitializationEvents.add("Initialize session change listener");
+
         if (agentConfiguration.isEnableANRReporting()) {
             Looper mainLooper = Looper.getMainLooper();
             Thread mainThread = Looper.getMainLooper().getThread();
@@ -167,7 +190,7 @@ public class Agent {
         }
 
         sdkInitializationInstrumentation.end();
-
+        isSDKInitializingDone.set(true);
     }
 
     private SdkTracerProvider getTracerProvider(Context context, DeviceMetricsCollector deviceMetricsCollector,
@@ -181,7 +204,7 @@ public class Agent {
         if (BuildConfig.DEBUG) {
             builder.addSpanProcessor(getStdoutBatchSpanProcessor());
         }
-        builder.setResource(AgentResource.get(context, deviceMetricsCollector));
+        builder.setResource(AgentResource.get(context));
         return builder.build();
     }
 
@@ -219,7 +242,7 @@ public class Agent {
                             PeriodicMetricReader.builder(new StdoutMetricsExporter())
                                     .setInterval(Duration.ofSeconds(5))
                                     .newMetricReaderFactory())
-                    .setResource(AgentResource.get(context, deviceMetricsCollector))
+                    .setResource(AgentResource.get(context))
                     .build();
 
 //        }  else {
@@ -236,21 +259,23 @@ public class Agent {
     }
 
     /**
+     * Start tracing an interaction
      *
      * @param transactionName the name for transaction
      * @param attributes the extra attributes for transaction
      * @return @Tracing object which can be used to end the tracing
      */
-    public Tracing startTracing(String transactionName, @Nullable Map<String, String> attributes) {
+    public SampleTracer startTracing(String transactionName, @Nullable Map<String, String> attributes) {
         SpanBuilder builder = getTracer().spanBuilder(transactionName);
         if (attributes != null) {
             attributes.forEach(builder::setAttribute);
         }
         Span span = builder.startSpan();
-        return Tracing.fromSpan(span);
+        return SampleTracer.fromSpan(span);
     }
 
-    static Tracer getTracer() {
+    @Internal
+    public static Tracer getTracer() {
         return GlobalOpenTelemetry.getTracer(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
     }
 }

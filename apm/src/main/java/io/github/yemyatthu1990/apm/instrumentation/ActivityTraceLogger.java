@@ -1,7 +1,9 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.instrumentation;
 
 import android.app.Activity;
 
+import io.github.yemyatthu1990.apm.Agent;
+import io.github.yemyatthu1990.apm.instrumentation.AppStartInstrumentation;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -23,7 +25,7 @@ class ActivityTraceLogger extends TraceLogger {
          startSpan(activityCreationSpanKey, null);
     }
 
-    void startAppstartActivityCreationSpan() {
+    void startAppStartActivityCreationSpan() {
         if (appStartInstrumentation != null) {
             startSpan(activityCreationSpanKey, appStartInstrumentation.getSpan());
         }

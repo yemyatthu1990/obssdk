@@ -11,14 +11,21 @@ import okhttp3.*
 import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
-    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         findViewById<AppCompatButton>(R.id.crashButton)
             .setOnClickListener { throw IllegalAccessException("Crash test") }
         findViewById<AppCompatButton>(R.id.anrButton)
             .setOnClickListener { while (true);}
+        findViewById<AppCompatButton>(R.id.longRunningButton)
+            .setOnClickListener {
+                scope.launch {
+                    runTask()
+                }
+            }
         val okHttpClient = OkHttpClient()
             .newBuilder()
             .build()
@@ -34,9 +41,6 @@ class MainActivity : AppCompatActivity() {
                  }
 
              })
-        scope.launch {
-            runTask()
-        }
 
     }
 
@@ -47,8 +51,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun runTask() {
         val trace = Agent.getInstance().startTracing("long running task", null)
-        for (i in 0..100) {
-            Thread.sleep(10)
+        for (i in 0..3) {
+            val childTrace = trace.addTrace("long running task number: $i", null)
+            Thread.sleep(5000)
+            childTrace.stopTracing()
         }
         trace.stopTracing();
     }

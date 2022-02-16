@@ -34,8 +34,7 @@ public class AndroidLog{
 
 
     private static void traceLog(int logLevel, String tag, String message, Throwable t) {
-        Tracer tracer = GlobalOpenTelemetry.getTracer(BuildConfig.LIBRARY_NAME, BuildConfig.VERSION_NAME);
-        SpanBuilder spanBuilder = tracer.spanBuilder(logKey)
+        SpanBuilder spanBuilder = Agent.getTracer().spanBuilder(logKey)
                 .setSpanKind(SpanKind.CLIENT)
                 .setAttribute("tag" , tag)
                 .setAttribute("message", message)

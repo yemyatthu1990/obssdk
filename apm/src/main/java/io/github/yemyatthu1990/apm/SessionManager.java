@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.opentelemetry.api.trace.TraceId;
 import io.opentelemetry.sdk.common.Clock;
 
-class SessionManager {
+public class SessionManager {
     private static final long sessionDuration = TimeUnit.HOURS.toNanos(12);
 
         private final Clock clock;
@@ -30,7 +30,7 @@ class SessionManager {
             return UUID.randomUUID().toString().replaceAll("[^a-zA-Z0-9]", "");
         }
 
-        String getSessionId() {
+        public String getSessionId() {
             String currentValue = value.get();
             if (sessionExpired()) {
                 String newId = createNewId();

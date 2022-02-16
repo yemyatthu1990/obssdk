@@ -1,5 +1,6 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.sampler;
 
+import io.github.yemyatthu1990.apm.collector.CpuInfo;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;

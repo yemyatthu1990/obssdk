@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.instrumentation;
 
 import android.app.Activity;
 import android.app.Application;
@@ -33,9 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.github.yemyatthu1990.apm.AppState;
+import io.github.yemyatthu1990.apm.reporter.DeprecatedAPINetworkChangeReporter;
 
-class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleCallbacks {
+public class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleCallbacks {
     private int activitiesCount = 0;
 
     //Keep track of TraceLogger instances for every activity in the app
@@ -44,7 +45,7 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
     private final AtomicReference<String> initialActivity = new AtomicReference<>();
     private final List<AppState> appStates = new ArrayList<>();
     private final DeprecatedAPINetworkChangeReporter deprecatedAPINetworkChangeReporter;
-    ActivityLifeCycleInstrumentation(List<AppState> appStates,@Nullable DeprecatedAPINetworkChangeReporter deprecatedAPINetworkChangeReporter, AppStartInstrumentation appStartInstrumentation) {
+    public ActivityLifeCycleInstrumentation(List<AppState> appStates, @Nullable DeprecatedAPINetworkChangeReporter deprecatedAPINetworkChangeReporter, AppStartInstrumentation appStartInstrumentation) {
         if (appStates != null) {
             this.appStates.addAll(appStates);
         }
@@ -71,7 +72,7 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
         if (initialActivity.get() == null) {
             initialActivity.set(activity.getClass().getName());
             getTracer(activity)
-                    .startAppstartActivityCreationSpan();
+                    .startAppStartActivityCreationSpan();
 
         } else {
             getTracer(activity)

@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.reporter;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,8 +9,6 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 
 import androidx.annotation.Nullable;
-
-import java.net.NetworkInterface;
 
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;

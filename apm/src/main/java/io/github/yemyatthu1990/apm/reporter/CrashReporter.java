@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.reporter;
 
 import androidx.annotation.NonNull;
 
@@ -34,7 +34,7 @@ public class CrashReporter {
             e.printStackTrace(new PrintWriter(crashWriter));
             Span span = tracer.spanBuilder(e.getClass().getSimpleName())
                     .setSpanKind(SpanKind.CLIENT)
-                    .setAttribute(AgentConstant.COMPONENT_TYPE, AgentConstant.COMPONENT.ERROR.name())
+                    .setAttribute(AgentConstant.COMPONENT_TYPE, AgentConstant.component.error.name())
                     .setAttribute(SemanticAttributes.THREAD_ID, t.getId())
                     .setAttribute(SemanticAttributes.THREAD_NAME, t.getName())
                     .setAttribute(SemanticAttributes.EXCEPTION_STACKTRACE, crashWriter.toString())

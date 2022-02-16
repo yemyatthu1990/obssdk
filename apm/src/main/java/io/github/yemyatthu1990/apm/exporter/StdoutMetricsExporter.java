@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.exporter;
 
 import androidx.annotation.Nullable;
 
@@ -15,7 +15,7 @@ import io.opentelemetry.sdk.metrics.data.DoublePointData;
 import io.opentelemetry.sdk.metrics.data.MetricData;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
 
-class StdoutMetricsExporter implements MetricExporter {
+public class StdoutMetricsExporter implements MetricExporter {
     @Nullable
     @Override
     public AggregationTemporality getPreferredTemporality() {

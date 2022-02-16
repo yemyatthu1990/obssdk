@@ -1,4 +1,4 @@
-package io.github.yemyatthu1990.apm;
+package io.github.yemyatthu1990.apm.collector;
 
 import android.os.Build;
 
@@ -8,12 +8,12 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-class CpuInfo {
+public class CpuInfo {
 
     /*
      * return current cpu usage (0 to 100) guessed from core frequencies
      */
-    static double getCpuUsageFromFreq() {
+    public static double getCpuUsageFromFreq() {
         return getCpuUsage(getCoresUsageGuessFromFreq());
     }
 
