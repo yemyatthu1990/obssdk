@@ -27,7 +27,7 @@ class SessionManager {
         }
 
         private static String createNewId() {
-            return UUID.randomUUID().toString().replace("[^a-zA-Z0-9]", "");
+            return UUID.randomUUID().toString().replaceAll("[^a-zA-Z0-9]", "");
         }
 
         String getSessionId() {

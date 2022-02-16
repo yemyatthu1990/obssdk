@@ -40,5 +40,4 @@ abstract class TraceLogger {
 
     abstract Span createSpan(String spanName, Span parente);
 
-
 }

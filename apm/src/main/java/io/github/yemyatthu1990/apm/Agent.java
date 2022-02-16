@@ -2,6 +2,8 @@ package io.github.yemyatthu1990.apm;
 
 import android.app.Application;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -123,17 +125,34 @@ public class Agent {
 
         sessionManager.setSessionIdChangeListener(new SessionTracer(getTracer()));
         listOfSdkInitializationEvents.add("Initialize session change listener");
-        AppState appState = null;
+        List<AppState> appStates = new ArrayList<>();
         if (agentConfiguration.isEnableANRReporting()) {
             Looper mainLooper = Looper.getMainLooper();
             Thread mainThread = Looper.getMainLooper().getThread();
             Handler uiHandler = new Handler(mainLooper);
 
-            appState = new ANRReporter(uiHandler, mainThread);
-        } else {
-            appState = new NoOpAppState();
+            AppState anrReporter = new ANRReporter(uiHandler, mainThread);
+            appStates.add(anrReporter);
+            listOfSdkInitializationEvents.add("Register activity Lifecycle Callbacks");
         }
-        Application.ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifeCycleInstrumentation(appState, appStartInstrumentation);
+
+
+        ConnectivityManager cm = (ConnectivityManager) application.getSystemService(Context.CONNECTIVITY_SERVICE);
+        DeprecatedAPINetworkChangeReporter deprecatedAPINetworkChangeReporter = null;
+
+        //Use newer registerDefaultNetworkCallback for Android version later than 7
+        //Fall back to good old broadcast register for old android versions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            NetworkChangeReporter networkChangeReporter = new NetworkChangeReporter(cm, getTracer());
+            cm.registerDefaultNetworkCallback(networkChangeReporter);
+            appStates.add(networkChangeReporter);
+        } else {
+            deprecatedAPINetworkChangeReporter = new DeprecatedAPINetworkChangeReporter(cm, getTracer());
+        }
+        listOfSdkInitializationEvents.add("Register network change reporter");
+
+
+        Application.ActivityLifecycleCallbacks lifecycleCallbacks = new ActivityLifeCycleInstrumentation(appStates,deprecatedAPINetworkChangeReporter, appStartInstrumentation);
 
         application.registerActivityLifecycleCallbacks(lifecycleCallbacks);
         listOfSdkInitializationEvents.add("Register activity Lifecycle Callbacks");

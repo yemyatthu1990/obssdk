@@ -18,6 +18,8 @@ package io.github.yemyatthu1990.apm;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -25,7 +27,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,9 +42,13 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
     private final Map<String, ActivityTraceLogger> activityTraceLoggers;
     private final AppStartInstrumentation appStartInstrumentation ;
     private final AtomicReference<String> initialActivity = new AtomicReference<>();
-    private final AppState appState;
-    ActivityLifeCycleInstrumentation(AppState appState, AppStartInstrumentation appStartInstrumentation) {
-        this.appState = appState;
+    private final List<AppState> appStates = new ArrayList<>();
+    private final DeprecatedAPINetworkChangeReporter deprecatedAPINetworkChangeReporter;
+    ActivityLifeCycleInstrumentation(List<AppState> appStates,@Nullable DeprecatedAPINetworkChangeReporter deprecatedAPINetworkChangeReporter, AppStartInstrumentation appStartInstrumentation) {
+        if (appStates != null) {
+            this.appStates.addAll(appStates);
+        }
+        this.deprecatedAPINetworkChangeReporter = deprecatedAPINetworkChangeReporter;
         this.appStartInstrumentation = appStartInstrumentation;
         this.activityTraceLoggers = new HashMap<>();
     }
@@ -91,13 +99,17 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
     @Override
     public void onActivityPreStarted(@NonNull Activity activity) {
         if (activitiesCount == 0) {
-            if (appState != null) appState.onAppEnterForeground();
+            for(AppState appState: appStates) {
+                appState.onAppEnterForeground();
+            }
             getTracer(activity)
                     .startAppForegroundSpan();
             getTracer(activity).addEvent("onActivityPreStarted");
         }
         activitiesCount++;
-
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        activity.registerReceiver(deprecatedAPINetworkChangeReporter, new IntentFilter());
     }
 
 
@@ -145,7 +157,9 @@ class ActivityLifeCycleInstrumentation implements Application.ActivityLifecycleC
     @Override
     public void onActivityPreStopped(@NonNull Activity activity) {
         if (--activitiesCount==0){
-            if (appState != null) appState.onAppEnterForeground();
+            for(AppState appState: appStates) {
+                appState.onAppEnterBackground();
+            }
             getTracer(activity)
                     .startAppBackgroundSpan();
             getTracer(activity).addEvent("activityPreStopped");

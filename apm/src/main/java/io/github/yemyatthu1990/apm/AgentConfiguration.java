@@ -8,7 +8,7 @@ public class AgentConfiguration {
     private boolean enableCrashMonitoring = true;
     private boolean enableANRReporting = true;
     private String secretToken = null;
-    private String endpoint = "http://10.228.213.101:9411/api/v2/spans";
+    private String endpoint = "http://localhost:9411/api/v2/spans";
 
     public String getEndpoint() {
         return endpoint;

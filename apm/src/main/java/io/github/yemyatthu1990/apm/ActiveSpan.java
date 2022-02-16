@@ -35,6 +35,7 @@ class ActiveSpan {
     Span getUnderlyingSpan() {
         return span;
     }
+
     boolean spanInProgress() {
         return span != null;
     }

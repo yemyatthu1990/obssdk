@@ -20,11 +20,12 @@ class ANRReporter implements Runnable, AppState {
     private final Thread mainThread;
     private final ScheduledExecutorService anrScheduler;
     private ScheduledFuture<?> scheduledFuture;
+
     ANRReporter(Handler uiHandler, Thread mainThread) {
         this.uiHandler = uiHandler;
         this.mainThread = mainThread;
-         anrScheduler = Executors.newScheduledThreadPool(1);
-         scheduledFuture = anrScheduler.scheduleAtFixedRate(this, 1, 1, TimeUnit.SECONDS);
+        anrScheduler = Executors.newScheduledThreadPool(1);
+        scheduledFuture = anrScheduler.scheduleAtFixedRate(this, 1, 1, TimeUnit.SECONDS);
     }
 
     @Override

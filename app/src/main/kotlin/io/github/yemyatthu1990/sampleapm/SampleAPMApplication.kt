@@ -21,7 +21,7 @@ class SampleAPMApplication : Application() {
     }
 
     private fun initializeAPMClient(context: Application): Agent {
-        Agent.start(context, "http://10.228.213.101:9411/api/v2/spans")
+        Agent.start(context, "http://10.10.10.67:9411/api/v2/spans")
         return Agent.getInstance()
     }
 }
