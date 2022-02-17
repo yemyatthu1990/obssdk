@@ -1,6 +1,7 @@
 package io.github.yemyatthu1990.apm.reporter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -19,7 +20,8 @@ public class CrashReporter {
         Thread.setDefaultUncaughtExceptionHandler(new CrashReportHandler(tracer,tracerProvider,defaultHandler));
     }
 
-    static class CrashReportHandler implements Thread.UncaughtExceptionHandler {
+    @VisibleForTesting
+    public static class CrashReportHandler implements Thread.UncaughtExceptionHandler {
         private final Tracer tracer;
         private final Thread.UncaughtExceptionHandler defaultHandler;
         private final SdkTracerProvider tracerProvider;
@@ -38,6 +40,8 @@ public class CrashReporter {
                     .setAttribute(SemanticAttributes.THREAD_ID, t.getId())
                     .setAttribute(SemanticAttributes.THREAD_NAME, t.getName())
                     .setAttribute(SemanticAttributes.EXCEPTION_STACKTRACE, crashWriter.toString())
+                    .setAttribute(SemanticAttributes.EXCEPTION_TYPE, e.getClass().getSimpleName())
+                    .setAttribute(SemanticAttributes.EXCEPTION_MESSAGE, e.getMessage())
                     .setAttribute(SemanticAttributes.EXCEPTION_ESCAPED, true)
                     .startSpan();
             span.setStatus(StatusCode.ERROR).end();
