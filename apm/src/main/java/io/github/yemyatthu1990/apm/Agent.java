@@ -56,7 +56,6 @@ public class Agent {
     public static Agent getInstance() {
         return instance;
     }
-
     /**
      *
      * @param application application object

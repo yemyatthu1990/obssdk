@@ -2,6 +2,7 @@ package io.github.yemyatthu1990.apm.collector;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 public class RuntimeAttributesCollector extends MetricsCollector {
     private final String runtimeCPUUsageKey = "system.cpu.usage";
@@ -11,7 +12,9 @@ public class RuntimeAttributesCollector extends MetricsCollector {
     public RuntimeAttributesCollector() {
 
     }
-    public Map<String, String> getRuntimeAttributes() {
+
+    @Override
+    public ConcurrentMap<String, String> getMetric() {
         this.put(runtimeCPUUsageKey, String.format(Locale.ROOT, "%.2f %%",CpuInfo.getCpuUsageFromFreq()));
         this.put(runtimeMemoryFreeKey, String.format(Locale.ROOT, "%.2f GB",MemoryInfo.getFreeRam()));
         this.put(runtimeMemoryTotalKey, String.format(Locale.ROOT, "%.2f GB",MemoryInfo.getTotalRam()));

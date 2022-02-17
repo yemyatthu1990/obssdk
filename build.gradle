@@ -7,7 +7,7 @@ buildscript {
         mavenLocal()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:7.1.0"
+        classpath "com.android.tools.build:gradle:7.1.1"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "co.elastic.android.gradle:ElasticsInstrumentationExample:0.104"
         classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.18"
